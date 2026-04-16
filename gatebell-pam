@@ -1,0 +1,9 @@
+#!/bin/bash
+# GateBell PAM Wrapper v1.0 — by Kotech Petacomm
+# This file connects GateBell to the SSH login system.
+# You don't need to edit this file.
+export PAM_TYPE="$PAM_TYPE"
+export PAM_RHOST="$PAM_RHOST"
+export PAM_USER="$PAM_USER"
+/usr/bin/python3 /usr/local/bin/gatebell-notify &
+exit 0

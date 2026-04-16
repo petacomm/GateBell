@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+# GateBell Notifier v1.0 — by Kotech Petacomm
+# This runs automatically in the background on every SSH login.
+# You don't need to run or edit this file.
+
+import os, sys, json, hmac, hashlib, requests, secrets
+from datetime import datetime, timezone
+
+CONFIG_FILE = "/etc/gatebell/config.json"
+
+def load_config():
+    with open(CONFIG_FILE) as f:
+        return json.load(f)
+
+def sign(payload_bytes, secret):
+    secret_hash = hashlib.sha256(secret.encode()).hexdigest()
+    return hmac.new(secret_hash.encode(), payload_bytes, hashlib.sha256).hexdigest()
+
+def main():
+    if os.environ.get("PAM_TYPE", "") != "open_session":
+        sys.exit(0)
+
+    connecting_ip = os.environ.get("PAM_RHOST", "unknown")
+    login_dt      = datetime.now(timezone.utc).astimezone().isoformat()
+    nonce         = secrets.token_hex(16)
+
+    try:
+        cfg = load_config()
+    except Exception as e:
+        print(f"[GateBell] Could not read config: {e}", file=sys.stderr)
+        sys.exit(0)
+
+    payload = {
+        "user_id":       cfg["user_id"],
+        "connecting_ip": connecting_ip,
+        "login_dt":      login_dt,
+    }
+
+    import json as _json
+    payload_bytes = _json.dumps(payload, separators=(',', ':')).encode()
+
+    try:
+        requests.post(
+            f"{cfg['server_url']}/ssh/login",
+            data=payload_bytes,
+            headers={
+                "Content-Type":          "application/json",
+                "X-GateBell-Signature":  sign(payload_bytes, cfg["client_secret"]),
+                "X-GateBell-Nonce":      nonce,
+                "X-GateBell-Timestamp":  login_dt,
+            },
+            timeout=8
+        )
+    except Exception as e:
+        print(f"[GateBell] Could not send notification: {e}", file=sys.stderr)
+
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

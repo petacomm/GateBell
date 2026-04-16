@@ -1,0 +1,26 @@
+[Unit]
+Description=GateBell SSH Login Detector - API Server
+After=network.target
+
+[Service]
+Type=simple
+User=gatebell
+Group=gatebell
+WorkingDirectory=/opt/gatebell
+EnvironmentFile=/opt/gatebell/.env
+ExecStart=/opt/gatebell/venv/bin/gunicorn \
+    --workers 2 \
+    --bind 127.0.0.1:5055 \
+    --timeout 30 \
+    --access-logfile /var/log/gatebell/access.log \
+    --error-logfile /var/log/gatebell/error.log \
+    app:app
+Restart=always
+RestartSec=5
+
+# Güvenlik kısıtlamaları
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
