@@ -29,7 +29,7 @@ No dashboards. No subscriptions. No complexity.
 ## Quick Install
 
 ```bash
-curl -fsSL https://repo.kotechsoft.com/gbsetup.sh | sudo bash
+curl -fsSL https://repo.kotechsoft.com/gbi.sh | sudo bash
 ```
 
 Then run the setup wizard:
